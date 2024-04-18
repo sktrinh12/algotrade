@@ -1,6 +1,6 @@
 from .tools.common import Strategy, np, pd
 from datetime import timedelta
-from .tools.tools import position_sizing, symbol_type
+from .tools.tools import position_sizing
 from .tools.finbert_utils import estimate_sentiment
 from .tools.config import ALPACA_CONFIG
 from alpaca_trade_api import REST
