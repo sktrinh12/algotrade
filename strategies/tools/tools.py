@@ -2,16 +2,17 @@ import re
 # import matplotlib.pyplot as plt
 
 def position_sizing(cash, last_price, cash_at_risk):
-    if last_price is None:
-        print("Error: Last price is not available.")
+    if last_price is None or last_price <= 0:
+        print(f"Error: Last price is not available {last_price}")
 
     if cash <=0:
-        print("Error: Insufficient cash available for trading.")
+        print(f"Error: Insufficient cash available for trading {cash}")
 
-    quantity = round(cash * cash_at_risk / last_price, 0)
+    quantity_calc = cash * cash_at_risk / last_price
+    quantity = round(quantity_calc, 0)
 
     if quantity <=0:
-        print("Error: Calculated quantity is not positive.")
+        print(f"Error: Calculated quantity {cash}*{cash_at_risk} / {last_price} = {quantity_calc:.2f}")
     return quantity
 
 
