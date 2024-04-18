@@ -1,5 +1,6 @@
 from .tools.common import Strategy, Trader, np, pd
-from .tools.tools import position_sizing, symbol_type
+from .tools.tools import position_sizing
+
 
 class SimpleMACrossover(Strategy):
     parameters = {
@@ -17,25 +18,26 @@ class SimpleMACrossover(Strategy):
         self.sleeptime = "1D"
 
 
-    def get_trend_signal(self, prices: np.array):
-        data = pd.DataFrame({'close': prices})
+    def get_trend_signal(self, prices: np.array) -> pd.DataFrame:
+        data = pd.DataFrame({'Price': prices})
         data['short_ma'] = data['close'].rolling(self.parameters['short_window']).mean()
         data['long_ma'] = data['close'].rolling(self.parameters['long_window']).mean()
         data['Signal'] = np.where(np.logical_and(data['short_ma'] > data['long_ma'],
                                                 data['short_ma'].shift(1) < data['long_ma'].shift(1)),
-                                 "BUY", None)
+                                 "BUY", 'HOLD')
         data['Signal'] = np.where(np.logical_and(data['short_ma'] < data['long_ma'],
                                                 data['short_ma'].shift(1) > data['long_ma'].shift(1)),
                                  "SELL", data['Signal'])
-        last_data = data.iloc[-1]
-        self.signal = last_data['Signal']
-        self.last_price = last_data['close']
+
+        self.signal = data['Signal'].iloc[-1]
+        self.last_price = data['Price'].iloc[-1]
         print(f"{'':<4}{self.signal}")
+        return data
 
     def on_trading_iteration(self):
         bars = self.get_historical_prices(self.parameters['symbol'], self.parameters['window'], "day")
 
-        self.get_trend_signal(bars.df['close'])
+        data = self.get_trend_signal(bars.df['close'])
         if self.signal == 'BUY':
             cash = self.get_cash()
             quantity = position_sizing(cash, self.last_price, self.parameters['cash_at_risk'])
