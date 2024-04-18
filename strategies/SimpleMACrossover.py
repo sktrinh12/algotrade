@@ -20,14 +20,10 @@ class SimpleMACrossover(Strategy):
 
     def get_trend_signal(self, prices: np.array) -> pd.DataFrame:
         data = pd.DataFrame({'Price': prices})
-        data['short_ma'] = data['close'].rolling(self.parameters['short_window']).mean()
-        data['long_ma'] = data['close'].rolling(self.parameters['long_window']).mean()
-        data['Signal'] = np.where(np.logical_and(data['short_ma'] > data['long_ma'],
-                                                data['short_ma'].shift(1) < data['long_ma'].shift(1)),
-                                 "BUY", 'HOLD')
-        data['Signal'] = np.where(np.logical_and(data['short_ma'] < data['long_ma'],
-                                                data['short_ma'].shift(1) > data['long_ma'].shift(1)),
-                                 "SELL", data['Signal'])
+        data['short_ma'] = data['Price'].rolling(self.parameters['short_window']).mean()
+        data['long_ma'] = data['Price'].rolling(self.parameters['long_window']).mean()
+        data['Signal'] = np.where(data['short_ma'] > data['long_ma'], "BUY", 'HOLD')
+        data['Signal'] = np.where(data['short_ma'] < data['long_ma'], "SELL", data['Signal'])
 
         self.signal = data['Signal'].iloc[-1]
         self.last_price = data['Price'].iloc[-1]
