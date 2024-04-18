@@ -84,6 +84,14 @@ if __name__ == "__main__":
                   broker=broker,
                   parameters=params
             )
+        elif args.strategy == STRATEGIES[6]: # VolatilityATR
+            from strategies.VolatilityATR import VolatilityATR
+            strategy = VolatilityATR(
+                  name=strat_name,
+                  broker=broker,
+                  parameters=params
+            )
+
 
 
         trader = Trader(logfile="", backtest=True)
