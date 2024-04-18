@@ -1,10 +1,14 @@
-STRATEGIES = ['simple-mac-crossover',\
-              'bollinger-bands',\
-              'mean-revision',\
-              'sentiment',\
-              'aroon-crossover',\
-              'ema-crossover'
-              ]
+STRATEGY_INDICES = {
+    'simple-mac-crossover': 0,
+    'bollinger-bands': 1,
+    'mean-reversion': 2,
+    'sentiment': 3,
+    'aroon-crossover': 4,
+    'ema-crossover': 5,
+    'volatility-atr': 6
+}
+
+STRATEGIES = list(STRATEGY_INDICES.keys())
 
 def build_params(args):
     parameters={
