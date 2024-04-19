@@ -1,7 +1,7 @@
 from .tools.common import Strategy, np, pd
 from .tools.tools import position_sizing
 
-class MeanRevision(Strategy):
+class MeanReversion(Strategy):
 
     parameters = {
         "symbol": "",
