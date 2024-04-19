@@ -8,7 +8,7 @@ from .tools.common import Strategy, np, pd
 from .tools.tools import position_sizing, symbol_type
 
 
-class BollingerBandsBot(Strategy):
+class BollingerBands(Strategy):
     parameters = {
         'symbol': '',
         "window": 0,
