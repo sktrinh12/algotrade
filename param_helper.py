@@ -5,7 +5,8 @@ STRATEGY_INDICES = {
     'sentiment': 3,
     'aroon-crossover': 4,
     'ema-crossover': 5,
-    'volatility-atr': 6
+    'volatility-atr': 6,
+    'rsi-crossover': 7
 }
 
 STRATEGIES = list(STRATEGY_INDICES.keys())
@@ -23,6 +24,11 @@ def build_params(args):
                            })
     elif args.strategy == STRATEGIES[1]:
         parameters['num_std_dev'] = args.num_std_dev
-    print(parameters)
+    elif args.strategy == STRATEGIES[7]:
+        parameters['rsi_period'] = args.rsi_period
+        parameters['upper_threshold'] = args.upper_threshold
+        parameters['lower_threshold'] = args.lower_threshold
+    for k,v in parameters.items():
+        print(f'{k}:{v}')
     return parameters
 
