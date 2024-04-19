@@ -37,8 +37,8 @@ if __name__ == "__main__":
         bot.add_strategy(strategy)
         bot.run_all()
     else:
-        start = datetime(2023, 1, 1)
-        end = datetime(2023, 5, 1)
+        start = datetime(2022, 1, 1)
+        end = datetime(2023, 6, 1)
         data_source = YahooDataBacktesting(
             datetime_start=start,
             datetime_end=end,
@@ -53,8 +53,8 @@ if __name__ == "__main__":
                   parameters=params
             )
         elif args.strategy == STRATEGIES[1]: # BollingerBands
-            from strategies.BollingerBands import BollingerBandsBot
-            strategy = BollingerBandsBot(
+            from strategies.BollingerBands import BollingerBands
+            strategy = BollingerBands(
                   name=strat_name,
                   broker=broker,
                   parameters=params
