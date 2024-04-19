@@ -15,6 +15,9 @@ if __name__ == "__main__":
     parser.add_argument('--risk_tolerance', type=float, default=0.02, help='Specify risk tolerance for bracket order')
     parser.add_argument('--cash_at_risk', type=float, default=0.1, help='Specify cash at risk or amount of capital that could be lost if the investment performs poorly')
     parser.add_argument('--num_std_dev', type=float, default=2.0, help='Specify standard deviation')
+    parser.add_argument('--rsi_period', type=int, default=3, help='Specify RSI (relative strength index) period')
+    parser.add_argument('--upper_threshold', type=int, default=70, help='Specify RSI upper threshold')
+    parser.add_argument('--lower_threshold', type=int, default=32, help='Specify RSI lower threshold')
     parser.add_argument('--strategy', required=True, type=str,\
                         default=STRATEGIES[0], choices=STRATEGIES,\
                         help=f'Specify a strategy: {", ".join(STRATEGIES)}')
@@ -56,9 +59,9 @@ if __name__ == "__main__":
                   broker=broker,
                   parameters=params
             )
-        elif args.strategy == STRATEGIES[2]: # MeanRevision
-            from strategies.MeanRevision import MeanRevision
-            strategy = MeanRevision(
+        elif args.strategy == STRATEGIES[2]: # MeanReversion
+            from strategies.MeanReversion import MeanReversion
+            strategy = MeanReversion(
                   name=strat_name,
                   broker=broker,
                   parameters=params
@@ -91,7 +94,13 @@ if __name__ == "__main__":
                   broker=broker,
                   parameters=params
             )
-
+        elif args.strategy == STRATEGIES[7]: # RsiCrossover
+            from strategies.RsiCrossover import RsiCrossover
+            strategy = RsiCrossover(
+                  name=strat_name,
+                  broker=broker,
+                  parameters=params
+            )
 
 
         trader = Trader(logfile="", backtest=True)
