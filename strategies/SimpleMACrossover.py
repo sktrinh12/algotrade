@@ -1,6 +1,39 @@
 from .tools.common import Strategy, Trader, np, pd
 from .tools.tools import position_sizing
 
+class SimpleMACrossoverStrategy:
+    def __init__(self, params):
+        self.short_window = params['short_window']
+        self.long_window = params['long_window']
+        self.data = None
+
+    def get_data(self, prices: np.array) -> pd.DataFrame:
+        data = pd.DataFrame({'Price': prices})
+        data['short_ma'] = data['Price'].rolling(self.short_window).mean()
+        data['long_ma'] = data['Price'].rolling(self.long_window).mean()
+        # Buy condition: short moving average crosses above long moving average
+        buy_condition = (data['short_ma'] > data['long_ma'])
+        # Sell condition: short moving average crosses below long moving average
+        sell_condition = (buy_condition) & (buy_condition.shift(1) == False)
+        hold_condition = ~(buy_condition | sell_condition)
+
+        sell_condition = (data['short_ma'] < data['long_ma']) & (data['short_ma'].shift(1) >= data['long_ma'].shift(1))
+
+        # Hold condition: neither buy nor sell condition is met
+        hold_condition = ~(buy_condition | sell_condition)
+        data['Signal'] = ''
+        data.loc[buy_condition, 'Signal'] = 'BUY'
+        data.loc[sell_condition, 'Signal'] = 'SELL'
+        data.loc[hold_condition, 'Signal'] = 'HOLD'
+        self.data = data
+        return data
+
+    def set_vars(self):
+        signal = self.data['Signal'].iloc[-1]
+        last_price = self.data['Price'].iloc[-1]
+        print(f"{'':<4}{signal}")
+        return signal, last_price
+
 
 class SimpleMACrossover(Strategy):
     parameters = {
@@ -16,24 +49,18 @@ class SimpleMACrossover(Strategy):
         self.signal = None
         self.last_price = 0
         self.sleeptime = "1D"
-
-
-    def get_trend_signal(self, prices: np.array) -> pd.DataFrame:
-        data = pd.DataFrame({'Price': prices})
-        data['short_ma'] = data['Price'].rolling(self.parameters['short_window']).mean()
-        data['long_ma'] = data['Price'].rolling(self.parameters['long_window']).mean()
-        data['Signal'] = np.where(data['short_ma'] > data['long_ma'], "BUY", 'HOLD')
-        data['Signal'] = np.where(data['short_ma'] < data['long_ma'], "SELL", data['Signal'])
-
-        self.signal = data['Signal'].iloc[-1]
-        self.last_price = data['Price'].iloc[-1]
-        print(f"{'':<4}{self.signal}")
-        return data
+        self.strategy = SimpleMACrossoverStrategy(
+            params = {
+                'short_window': self.parameters['short_window'],
+                'long_window': self.parameters['long_window']
+            }
+        )
 
     def on_trading_iteration(self):
         bars = self.get_historical_prices(self.parameters['symbol'], self.parameters['window'], "day")
 
-        data = self.get_trend_signal(bars.df['close'])
+        data = self.strategy.get_data(bars.df['close'])
+        self.signal, self.last_price = self.strategy.set_vars()
         if self.signal == 'BUY':
             cash = self.get_cash()
             quantity = position_sizing(cash, self.last_price, self.parameters['cash_at_risk'])
