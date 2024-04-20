@@ -1,12 +1,12 @@
 STRATEGY_INDICES = {
-    'simple-mac-crossover': 0,
-    'bollinger-bands': 1,
-    'mean-reversion': 2,
-    'sentiment': 3,
-    'aroon-crossover': 4,
-    'ema-crossover': 5,
-    'volatility-atr': 6,
-    'rsi-crossover': 7
+    'simple-ma-crossover': ['SimpleMACrossover' , 0],
+    'bollinger-bands': ['BollingerBands', 1],
+    'mean-reversion':['MeanReversion', 2],
+    'sentiment':['SentimentAnalysis', 3],
+    'aroon-crossover':['AroonCrossover', 4],
+    'ema-crossover':['EmaCrossover', 5],
+    'volatility-atr':['VolatilityATR', 6],
+    'rsi-crossover':['RsiCrossover', 7]
 }
 
 STRATEGIES = list(STRATEGY_INDICES.keys())
