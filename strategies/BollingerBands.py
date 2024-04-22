@@ -1,14 +1,33 @@
-"""
-    checkout:
-        - strategy specific docs here : https://algobulls.github.io/pyalgotrading/strategies/bollinger_bands/
-        - generalised docs in detail here : https://algobulls.github.io/pyalgotrading/strategies/strategy_guides/common_strategy_guide/
-"""
-
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing, symbol_type
+from .tools.tools import position_sizing, set_vars
+
+
+class BollingerBandsCalc():
+    def __init__(self, params):
+        self.num_std_dev = params['num_std_dev']
+        self.window = params['window']
+
+    def get_data(self, prices: np.array) -> pd.DataFrame:
+        last_price = prices.iloc[-1]
+        rolling_mean = prices.rolling(window=self.window).mean()
+        rolling_std = prices.rolling(window=self.window).std()
+        upper_band = rolling_mean + (rolling_std * self.num_std_dev)
+        lower_band = rolling_mean - (rolling_std * self.num_std_dev)
+        signal = np.where(last_price > upper_band, 'SELL', np.where(last_price <
+                                                                    lower_band,
+                                                                    'BUY','HOLD'))
+
+        return pd.DataFrame({'Price': prices,
+                             'RollingMean': rolling_mean,
+                             'RollingStd': rolling_std,
+                             'UpperBand': upper_band,
+                             'LowerBand': lower_band,
+                             'Signal': signal,
+                            })
 
 
 class BollingerBands(Strategy):
+
     parameters = {
         'symbol': '',
         "window": 0,
@@ -21,25 +40,12 @@ class BollingerBands(Strategy):
         self.last_price = 0.0
         self.last_upper_band = None
         self.last_lower_band = None
-        print(f"symbol: {self.parameters['symbol']}")
-
-    def calculate_bollinger_bands(self, prices: np.array) -> pd.DataFrame:
-        rolling_mean = prices.rolling(window=self.parameters['window']).mean()
-        rolling_std = prices.rolling(window=self.parameters['window']).std()
-        upper_band = rolling_mean + (rolling_std * self.parameters['num_std_dev'])
-        lower_band = rolling_mean - (rolling_std * self.parameters['num_std_dev'])
-
-        data = pd.DataFrame({'Price': prices,
-                             'RollingMean': rolling_mean,
-                             'RollingStd': rolling_std,
-                             'UpperBand': upper_band,
-                             'LowerBand': lower_band
-                            })
-        self.last_price = data['Price'].iloc[-1]
-
-        self.last_upper_band = data['UpperBand'].iloc[-1]
-        self.last_lower_band = data['LowerBand'].iloc[-1]
-        return data
+        self.strategy = BollingerBandsCalc(
+            params = {
+                'num_std_dev': self.parameters['num_std_dev'],
+                'window': self.parameters['window']
+            }
+        )
 
 
     def on_trading_iteration(self):
@@ -49,22 +55,22 @@ class BollingerBands(Strategy):
         if len(prices) < self.parameters['window']:
             return
 
-        data = self.calculate_bollinger_bands(prices)
+        data = self.strategy.get_data(prices)
+        signal, last_price = set_vars(data, 'Signal')
+        last_lower_band = data['UpperBand'].iloc[-1]
+        last_upper_band = data['LowerBand'].iloc[-1]
 
         cash = self.get_cash()
-        quantity = position_sizing(cash, self.last_price, self.parameters['cash_at_risk'])
-        print(f"Last Price: {self.last_price}, Quantity: {quantity}, UB: {self.last_upper_band}, LB: {self.last_lower_band}")
+        quantity = position_sizing(cash, last_price, self.parameters['cash_at_risk'])
+        print(f"{'':<4}Last Price: {last_price}, Quantity: {quantity}, UB: {last_upper_band}, LB: {last_lower_band}")
 
-        if self.last_upper_band is None or self.last_lower_band is None or quantity <= 0:
-            return
-
-        if self.last_price > self.last_upper_band:
+        if signal == 'SELL':
             pos = self.get_position(self.parameters['symbol'])
             if pos is not None:
                 self.sell_all()
-        elif (self.last_price < self.last_lower_band) and (cash > 0) and (quantity > 0):
-            take_profit_price = self.last_price * (1 + self.parameters['risk_tolerance'])
-            stop_loss_price = self.last_price * (1 - self.parameters['risk_tolerance'])
+        elif (signal == 'BUY') and (cash > 0) and (quantity > 0):
+            take_profit_price = last_price * (1 + self.parameters['risk_tolerance'])
+            stop_loss_price = last_price * (1 - self.parameters['risk_tolerance'])
             order = self.create_order(
                     self.parameters['symbol'],
                     quantity,
