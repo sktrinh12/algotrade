@@ -21,6 +21,13 @@ def symbol_type(symbol:str):
         raise argparse.ArgumentTypeError("Symbol must not contain any digits")
     return symbol.upper()
 
+
+def set_vars(data, signal):
+    signal = data[signal].iloc[-1]
+    last_price = data['Price'].iloc[-1]
+    return signal, last_price
+
+
 # def moving_avg_plots(data, short_window, long_window, nbr):
 #     prices = data[0]
 #     short_ma = data[1]
