@@ -3,6 +3,7 @@ from .tools.tools import position_sizing, set_vars
 
 
 class BollingerBandsCalc():
+
     def __init__(self, params):
         self.num_std_dev = params['num_std_dev']
         self.window = params['window']

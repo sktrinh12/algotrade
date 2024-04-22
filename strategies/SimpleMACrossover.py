@@ -1,7 +1,8 @@
 from .tools.common import Strategy, Trader, np, pd
-from .tools.tools import position_sizing
+from .tools.tools import position_sizing, set_vars
 
-class SimpleMACrossoverStrategy:
+class SimpleMACrossoverCalc:
+
     def __init__(self, params):
         self.short_window = params['short_window']
         self.long_window = params['long_window']
@@ -28,11 +29,6 @@ class SimpleMACrossoverStrategy:
         self.data = data
         return data
 
-    def set_vars(self):
-        signal = self.data['Signal'].iloc[-1]
-        last_price = self.data['Price'].iloc[-1]
-        print(f"{'':<4}{signal}")
-        return signal, last_price
 
 
 class SimpleMACrossover(Strategy):
@@ -46,10 +42,8 @@ class SimpleMACrossover(Strategy):
     }
 
     def initialize(self):
-        self.signal = None
-        self.last_price = 0
         self.sleeptime = "1D"
-        self.strategy = SimpleMACrossoverStrategy(
+        self.strategy = SimpleMACrossoverCalc(
             params = {
                 'short_window': self.parameters['short_window'],
                 'long_window': self.parameters['long_window']
@@ -60,13 +54,15 @@ class SimpleMACrossover(Strategy):
         bars = self.get_historical_prices(self.parameters['symbol'], self.parameters['window'], "day")
 
         data = self.strategy.get_data(bars.df['close'])
-        self.signal, self.last_price = self.strategy.set_vars()
-        if self.signal == 'BUY':
+        signal, last_price = set_vars(data, 'Signal')
+        print(f"{'':<4}{signal}")
+
+        if signal == 'BUY':
             cash = self.get_cash()
-            quantity = position_sizing(cash, self.last_price, self.parameters['cash_at_risk'])
+            quantity = position_sizing(cash, last_price, self.parameters['cash_at_risk'])
             if (cash > 0) and (quantity > 0):
-                take_profit_price = self.last_price * (1 + self.parameters['risk_tolerance'])
-                stop_loss_price = self.last_price * (1 - self.parameters['risk_tolerance'])
+                take_profit_price = last_price * (1 + self.parameters['risk_tolerance'])
+                stop_loss_price = last_price * (1 - self.parameters['risk_tolerance'])
                 order = self.create_order(
                         self.parameters['symbol'],
                         quantity,
@@ -77,7 +73,7 @@ class SimpleMACrossover(Strategy):
                 )
                 self.submit_order(order)
 
-        elif self.signal == 'SELL':
+        elif signal == 'SELL':
             pos = self.get_position(self.parameters['symbol'])
             if pos is not None:
                 self.sell_all()
