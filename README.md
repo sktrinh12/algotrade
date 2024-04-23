@@ -50,5 +50,5 @@ python main.py --symbol MSFT --strategy mean-reversion --window 100 --cash_at_ri
 In order to run the same trading strategy unit test (pass symbol as an environmental variable):
 
 ```
-SYMBOL=VOO python tests/test_MeanReversion.py
+SYMBOL=MSFT python tests/test_MeanReversion.py
 ```
