@@ -38,3 +38,17 @@ This repository contains implementations of various trading strategies, each des
 
 - Parameters: `window=5, atr_multiplier=2.5, risk_tolerance=0.03`
 - Description: Utilizes the Average True Range (ATR) indicator to determine market volatility and adjust risk parameters accordingly.
+
+### Usage
+
+In order to run the trading strategy:
+
+```
+python main.py --symbol MSFT --strategy mean-reversion --window 100 --cash_at_risk 0.30 --risk_tolerance 0.04
+```
+
+In order to run the same trading strategy unit test (pass symbol as an environmental variable):
+
+```
+SYMBOL=VOO python tests/test_MeanReversion.py
+```
