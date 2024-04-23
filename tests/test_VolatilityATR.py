@@ -7,10 +7,10 @@ import pandas as pd
 from datetime import datetime
 import yfinance as yf
 from strategies.tools.tools import set_vars
-from strategies.BollingerBands import BollingerBandsCalc
+from strategies.VolatilityATR import VolatilityATRCalc
 
 
-class TestBollingerBands(unittest.TestCase):
+class TestVolatilityATR(unittest.TestCase):
     SYMBOL = 'AAPL'
     def setUp(self):
         self.cash = 1000000
@@ -21,6 +21,7 @@ class TestBollingerBands(unittest.TestCase):
         self.trading_fee = 0.0015
         self.matrix_dict = {}
         self.strategy = None
+        self.atr_multiplier = np.arange(1.0, 3.5, 0.5)
         self.moving_average_windows = [
             5,
             9,
@@ -32,27 +33,30 @@ class TestBollingerBands(unittest.TestCase):
             125,
             150
         ]
-        self.num_std_dev = np.arange(0.5, 3.5, 0.5)
 
     def test_output(self):
         dff = yf.download(self.SYMBOL, start=self.start, end=self.end)
-        for std in self.num_std_dev:
-            for win in self.moving_average_windows:
-                self.strategy = BollingerBandsCalc(
+        # re name columns due to use of all data for this calc and columns have
+        # capital letter
+        dff.columns = [c.lower() for c in dff.columns]
+        print(dff.columns)
+        for win in self.moving_average_windows:
+            for atr in self.atr_multiplier:
+                self.strategy = VolatilityATRCalc(
                     params = {
                         'window': win,
-                        'num_std_dev': std
+                        'atr_multiplier': atr,
                     }
                 )
 
-                outer_key = f'{std}_{win}'
+                outer_key = f'{win}_{atr}'
                 self.matrix_dict[outer_key] = {}
-                data = self.strategy.get_data(dff['Close'])
-                data = pd.merge(dff, data, left_index=True, right_index=True, how="inner")
-                data['shifted_open'] = data.Open.shift(-1)
+                data = self.strategy.get_data(dff)
+                data['shifted_open'] = data['open'].shift(-1)
+                data.rename(columns={'close': 'Price'}, inplace=True)
                 signal, last_price = set_vars(data, 'Signal')
                 print(f'signal: {signal} | last_price: {last_price}')
-                print(data.iloc[20:51])
+                print(data.iloc[20:41])
 
                 for risk in self.risk_range:
                     in_position = False
@@ -77,13 +81,13 @@ class TestBollingerBands(unittest.TestCase):
                             take_profit_price = buy_price * tp
                             stop_loss_price = buy_price * sl
 
-                            if row.Low < stop_loss_price:
+                            if row.low < stop_loss_price:
                                 sell_price = buy_price * sl
                                 sell_prices.append(sell_price)
                                 sell_dates.append(index)
                                 self.cash += sell_price
                                 in_position = False
-                            elif row.High > take_profit_price:
+                            elif row.high > take_profit_price:
                                 sell_price = buy_price * tp
                                 sell_prices.append(sell_price)
                                 sell_dates.append(index)
@@ -107,7 +111,7 @@ class TestBollingerBands(unittest.TestCase):
         optimal_risk = None
         optimal_profit = 0
         optimal_win = None
-        optimal_std = None
+        optimal_atr = None
         for window, risk_profit_dict in self.matrix_dict.items():
             sorted_risk_profit_dict = dict(sorted(risk_profit_dict.items(), key=lambda item: item[1], reverse=True))
             sorted_dict[window] = sorted_risk_profit_dict
@@ -120,9 +124,7 @@ class TestBollingerBands(unittest.TestCase):
                     if optimal_profit < val:
                         optimal_profit = val
                         optimal_risk = key
-                        std, win = window.split('_')
-                        optimal_win = win
-                        optimal_std = std
+                        optimal_win, optimal_atr = window.split('_')
                     print(f"  Risk: {key}, Profit: {val}")
 
         padding = " "*4
@@ -133,8 +135,8 @@ class TestBollingerBands(unittest.TestCase):
               f'{padding}Risk: {optimal_risk}\n'
               f'{padding}Profit: {optimal_profit}\n'
               f'{padding}Window: {optimal_win}\n'
-              f'{padding}Std: {optimal_std}')
+              f'{padding}ATR Multiplier: {optimal_atr}')
 
 if __name__ == '__main__':
-    TestBollingerBands.SYMBOL = os.environ.get('SYMBOL', TestBollingerBands.SYMBOL)
+    TestVolatilityATR.SYMBOL = os.environ.get('SYMBOL', TestVolatilityATR.SYMBOL)
     unittest.main()

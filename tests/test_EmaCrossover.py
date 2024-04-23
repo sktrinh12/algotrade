@@ -122,7 +122,10 @@ class TestEmaCrossover(unittest.TestCase):
         print('\n')
         print('='*60)
         print('\n')
-        print(f'optimals:\n{padding}Risk: {optimal_risk}\n{padding}Profit:{optimal_profit}\n{padding}Window:{optimal_win}')
+        print(f'optimals:\n'
+              f'{padding}Risk: {optimal_risk}\n'
+              f'{padding}Profit: {optimal_profit}\n'
+              f'{padding}Window: {optimal_win}')
 
 if __name__ == '__main__':
     TestEmaCrossover.SYMBOL = os.environ.get('SYMBOL', TestEmaCrossover.SYMBOL)

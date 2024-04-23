@@ -7,16 +7,17 @@ import pandas as pd
 from datetime import datetime
 import yfinance as yf
 from strategies.tools.tools import set_vars
-from strategies.BollingerBands import BollingerBandsCalc
+from strategies.MeanReversion import MeanReversionCalc
 
 
-class TestBollingerBands(unittest.TestCase):
+class TestMeanReversion(unittest.TestCase):
     SYMBOL = 'AAPL'
     def setUp(self):
         self.cash = 1000000
         self.start = datetime(2022, 1, 1)
         self.end = datetime(2023, 1, 1)
         self.risk_range = np.arange(0.01, 0.06, 0.01)
+        self.z_threshold_range = np.arange(0.5, 4, 0.5)
         self.cash_at_risk = 0.32
         self.trading_fee = 0.0015
         self.matrix_dict = {}
@@ -32,20 +33,19 @@ class TestBollingerBands(unittest.TestCase):
             125,
             150
         ]
-        self.num_std_dev = np.arange(0.5, 3.5, 0.5)
 
     def test_output(self):
         dff = yf.download(self.SYMBOL, start=self.start, end=self.end)
-        for std in self.num_std_dev:
-            for win in self.moving_average_windows:
-                self.strategy = BollingerBandsCalc(
+        for win in self.moving_average_windows:
+            for z in self.z_threshold_range:
+                self.strategy = MeanReversionCalc(
                     params = {
                         'window': win,
-                        'num_std_dev': std
+                        'z_threshold': z
                     }
                 )
 
-                outer_key = f'{std}_{win}'
+                outer_key = f'{win}_{z}'
                 self.matrix_dict[outer_key] = {}
                 data = self.strategy.get_data(dff['Close'])
                 data = pd.merge(dff, data, left_index=True, right_index=True, how="inner")
@@ -107,7 +107,7 @@ class TestBollingerBands(unittest.TestCase):
         optimal_risk = None
         optimal_profit = 0
         optimal_win = None
-        optimal_std = None
+        optimal_z = None
         for window, risk_profit_dict in self.matrix_dict.items():
             sorted_risk_profit_dict = dict(sorted(risk_profit_dict.items(), key=lambda item: item[1], reverse=True))
             sorted_dict[window] = sorted_risk_profit_dict
@@ -120,9 +120,7 @@ class TestBollingerBands(unittest.TestCase):
                     if optimal_profit < val:
                         optimal_profit = val
                         optimal_risk = key
-                        std, win = window.split('_')
-                        optimal_win = win
-                        optimal_std = std
+                        optimal_win, optimal_z = window.split('_')
                     print(f"  Risk: {key}, Profit: {val}")
 
         padding = " "*4
@@ -133,8 +131,8 @@ class TestBollingerBands(unittest.TestCase):
               f'{padding}Risk: {optimal_risk}\n'
               f'{padding}Profit: {optimal_profit}\n'
               f'{padding}Window: {optimal_win}\n'
-              f'{padding}Std: {optimal_std}')
+              f'{padding}Z Threshold: {optimal_z}')
 
 if __name__ == '__main__':
-    TestBollingerBands.SYMBOL = os.environ.get('SYMBOL', TestBollingerBands.SYMBOL)
+    TestMeanReversion.SYMBOL = os.environ.get('SYMBOL', TestMeanReversion.SYMBOL)
     unittest.main()

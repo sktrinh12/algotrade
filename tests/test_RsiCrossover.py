@@ -7,10 +7,10 @@ import pandas as pd
 from datetime import datetime
 import yfinance as yf
 from strategies.tools.tools import set_vars
-from strategies.BollingerBands import BollingerBandsCalc
+from strategies.RsiCrossover import RsiCrossoverCalc
 
 
-class TestBollingerBands(unittest.TestCase):
+class TestRsiCrossover(unittest.TestCase):
     SYMBOL = 'AAPL'
     def setUp(self):
         self.cash = 1000000
@@ -21,31 +21,28 @@ class TestBollingerBands(unittest.TestCase):
         self.trading_fee = 0.0015
         self.matrix_dict = {}
         self.strategy = None
-        self.moving_average_windows = [
-            5,
-            9,
-            14,
-            21,
-            35,
-            50,
-            100,
-            125,
-            150
+        self.rsi_period = np.arange(7,35,7)
+        self.upper_lower_pairs = [
+            (85, 15),
+            (80, 20),
+            (75, 25),
+            (70, 30),
+            (65, 35),
         ]
-        self.num_std_dev = np.arange(0.5, 3.5, 0.5)
 
     def test_output(self):
         dff = yf.download(self.SYMBOL, start=self.start, end=self.end)
-        for std in self.num_std_dev:
-            for win in self.moving_average_windows:
-                self.strategy = BollingerBandsCalc(
+        for u_l in self.upper_lower_pairs:
+            for rsi in self.rsi_period:
+                self.strategy = RsiCrossoverCalc(
                     params = {
-                        'window': win,
-                        'num_std_dev': std
+                        'upper_threshold': u_l[0],
+                        'lower_threshold': u_l[1],
+                        'rsi_period': rsi,
                     }
                 )
 
-                outer_key = f'{std}_{win}'
+                outer_key = f'{u_l[0]}_{u_l[1]}_{rsi}'
                 self.matrix_dict[outer_key] = {}
                 data = self.strategy.get_data(dff['Close'])
                 data = pd.merge(dff, data, left_index=True, right_index=True, how="inner")
@@ -106,13 +103,14 @@ class TestBollingerBands(unittest.TestCase):
         sorted_dict = {}
         optimal_risk = None
         optimal_profit = 0
-        optimal_win = None
-        optimal_std = None
-        for window, risk_profit_dict in self.matrix_dict.items():
+        optimal_upper = None
+        optimal_lower = None
+        optimal_rsi = None
+        for key, risk_profit_dict in self.matrix_dict.items():
             sorted_risk_profit_dict = dict(sorted(risk_profit_dict.items(), key=lambda item: item[1], reverse=True))
-            sorted_dict[window] = sorted_risk_profit_dict
-        for window, risk_profit_dict in sorted_dict.items():
-            print(f"Window: {window}")
+            sorted_dict[key] = sorted_risk_profit_dict
+        for thres, risk_profit_dict in sorted_dict.items():
+            print(f"Thresholds: {thres}")
             for key, val in risk_profit_dict.items():
                 if key.startswith('cash'):
                     print(f"  {key}: {val}")
@@ -120,9 +118,7 @@ class TestBollingerBands(unittest.TestCase):
                     if optimal_profit < val:
                         optimal_profit = val
                         optimal_risk = key
-                        std, win = window.split('_')
-                        optimal_win = win
-                        optimal_std = std
+                        optimal_upper, optimal_lower, optimal_rsi = thres.split('_')
                     print(f"  Risk: {key}, Profit: {val}")
 
         padding = " "*4
@@ -132,9 +128,10 @@ class TestBollingerBands(unittest.TestCase):
         print(f'optimals:\n'
               f'{padding}Risk: {optimal_risk}\n'
               f'{padding}Profit: {optimal_profit}\n'
-              f'{padding}Window: {optimal_win}\n'
-              f'{padding}Std: {optimal_std}')
+              f'{padding}Upper Threshold: {optimal_upper}\n'
+              f'{padding}Lower Threshold: {optimal_lower}\n'
+              f'{padding}RSI Period: {optimal_rsi}')
 
 if __name__ == '__main__':
-    TestBollingerBands.SYMBOL = os.environ.get('SYMBOL', TestBollingerBands.SYMBOL)
+    TestRsiCrossover.SYMBOL = os.environ.get('SYMBOL', TestRsiCrossover.SYMBOL)
     unittest.main()
