@@ -1,5 +1,27 @@
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing
+from .tools.tools import position_sizing, set_vars
+
+
+class EmaCrossoverCalc():
+
+    def __init__(self, params):
+        self.short_window = params['short_window']
+        self.long_window = params['long_window']
+
+    def get_data(self, prices: np.array) -> pd.DataFrame:
+        ema_x = prices.ewm(span=self.short_window, adjust=False).mean()
+        ema_y = prices.ewm(span=self.long_window, adjust=False).mean()
+
+        # The 'span' parameter specifies the number of periods over which the exponential decay factor is applied.
+        # A larger span will give more weight to recent observations, while a smaller span will give more weight to older observations.
+
+        # The 'adjust' parameter determines whether to divide by the decaying adjustment factor.
+        # Setting it to True scales the result by the decaying adjustment factor to account for the varying number of observations in each window.
+        crossover_signal = np.where(ema_x > ema_y, 'BUY', np.where(ema_x < ema_y, 'SELL', 'HOLD'))
+        return pd.DataFrame({
+            'Price': prices,
+            'Signal': crossover_signal
+        })
 
 class EmaCrossover(Strategy):
 
@@ -13,36 +35,23 @@ class EmaCrossover(Strategy):
     }
 
     def initialize(self):
-        print(f"symbol: {self.parameters['symbol']}")
-
-    def get_ema_crossover_signal(self, prices: np.array):
-        ema_x = prices.ewm(span=self.parameters['short_window'], adjust=False).mean()
-        ema_y = prices.ewm(span=self.parameters['long_window'], adjust=False).mean()
-
-        # The 'span' parameter specifies the number of periods over which the exponential decay factor is applied.
-        # A larger span will give more weight to recent observations, while a smaller span will give more weight to older observations.
-
-        # The 'adjust' parameter determines whether to divide by the decaying adjustment factor.
-        # Setting it to True scales the result by the decaying adjustment factor to account for the varying number of observations in each window.
-        crossover_signal = np.where(ema_x > ema_y, 'BUY', np.where(ema_x < ema_y, 'SELL', 'HOLD'))
-        df = pd.DataFrame({
-            'Price': prices,
-            'Signal': crossover_signal
-        })
-        return df
+        self.strategy = EmaCrossoverCalc(
+            params = {
+                'short_window': self.parameters['short_window'],
+                'long_window': self.parameters['long_window']
+            }
+        )
 
     def on_trading_iteration(self):
         bars = self.get_historical_prices(self.parameters['symbol'],
                                           self.parameters['window'], "day")
         prices = bars.df['close']
-        data = self.get_ema_crossover_signal(prices)
-        print(f"signal: {data.Signal[-1]}")
+        data = self.strategy.get_data(prices)
+        signal, last_price = set_vars(data, 'Signal')
+        print(f"{'':<4}{signal}")
 
-        last_price = data['Price'].iloc[-1]
         cash = self.get_cash()
         quantity = position_sizing(cash, last_price, self.parameters['cash_at_risk'])
-        print(f"Last Price: {last_price}, Quantity: {quantity}")
-        signal = data.Signal.iloc[-1]
         if signal == 'BUY':
             if cash > 0 and quantity > 0:
                 # Calculate take-profit and stop-loss prices based on risk tolerance
