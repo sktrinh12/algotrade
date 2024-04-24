@@ -28,7 +28,5 @@ def build_params(args):
         parameters['rsi_period'] = args.rsi_period
         parameters['upper_threshold'] = args.upper_threshold
         parameters['lower_threshold'] = args.lower_threshold
-    for k,v in parameters.items():
-        print(f'{k}:{v}')
     return parameters
 
