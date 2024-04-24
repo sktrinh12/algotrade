@@ -1,5 +1,5 @@
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing, set_vars
+from .tools.tools import position_sizing, set_vars, prnt_params
 
 
 class VolatilityATRCalc():
@@ -67,6 +67,7 @@ class VolatilityATR(Strategy):
                 'atr_multiplier': self.parameters['atr_multiplier']
             }
         )
+        prnt_params(self.parameters)
 
 
     def on_trading_iteration(self):

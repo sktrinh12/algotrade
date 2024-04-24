@@ -1,5 +1,5 @@
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing, set_vars
+from .tools.tools import position_sizing, set_vars, prnt_params
 
 
 class EmaCrossoverCalc():
@@ -41,6 +41,7 @@ class EmaCrossover(Strategy):
                 'long_window': self.parameters['long_window']
             }
         )
+        prnt_params(self.parameters)
 
     def on_trading_iteration(self):
         bars = self.get_historical_prices(self.parameters['symbol'],

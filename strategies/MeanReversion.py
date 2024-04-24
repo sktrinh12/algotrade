@@ -1,5 +1,5 @@
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing, set_vars
+from .tools.tools import position_sizing, set_vars, prnt_params
 
 
 class MeanReversionCalc():
@@ -39,6 +39,7 @@ class MeanReversion(Strategy):
                 'z_threshold': self.parameters['z_threshold']
             }
         )
+        prnt_params(self.parameters)
 
     def on_trading_iteration(self):
         bars = self.get_historical_prices(self.parameters['symbol'], self.parameters['window'], "day")

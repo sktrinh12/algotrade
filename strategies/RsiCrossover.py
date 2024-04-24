@@ -1,5 +1,5 @@
 from .tools.common import Strategy, Trader, np, pd
-from .tools.tools import position_sizing, set_vars
+from .tools.tools import position_sizing, set_vars, prnt_params
 
 
 class RsiCrossoverCalc():
@@ -57,6 +57,7 @@ class RsiCrossover(Strategy):
                 'lower_threshold': self.parameters['lower_threshold'],
             }
         )
+        prnt_params(self.parameters)
 
     def on_trading_iteration(self):
         bars = self.get_historical_prices(self.parameters['symbol'], self.parameters['window'], "day")
