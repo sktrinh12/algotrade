@@ -27,6 +27,9 @@ def set_vars(data, signal):
     last_price = data['Price'].iloc[-1]
     return signal, last_price
 
+def prnt_params(params):
+    for k,v in params.items():
+        print(f'{k}:{v}')
 
 # def moving_avg_plots(data, short_window, long_window, nbr):
 #     prices = data[0]
