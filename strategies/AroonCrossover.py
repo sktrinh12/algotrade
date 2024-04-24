@@ -1,5 +1,5 @@
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing, set_vars
+from .tools.tools import position_sizing, set_vars, prnt_params
 
 
 class AroonCrossoverCalc():
@@ -35,6 +35,7 @@ class AroonCrossover(Strategy):
                 'window': self.parameters['window']
             }
         )
+        prnt_params(self.parameters)
 
 
     def on_trading_iteration(self):
