@@ -1,5 +1,5 @@
 from .tools.common import Strategy, np, pd
-from .tools.tools import position_sizing, set_vars
+from .tools.tools import position_sizing, set_vars, prnt_params
 
 
 class BollingerBandsCalc():
@@ -14,9 +14,13 @@ class BollingerBandsCalc():
         rolling_std = prices.rolling(window=self.window).std()
         upper_band = rolling_mean + (rolling_std * self.num_std_dev)
         lower_band = rolling_mean - (rolling_std * self.num_std_dev)
-        signal = np.where(last_price > upper_band, 'SELL', np.where(last_price <
-                                                                    lower_band,
-                                                                    'BUY','HOLD'))
+        signal = np.where(
+                last_price > upper_band,
+                'SELL',
+                np.where(last_price < lower_band,
+                         'BUY','HOLD'
+                         )
+        )
 
         return pd.DataFrame({'Price': prices,
                              'RollingMean': rolling_mean,
@@ -47,6 +51,7 @@ class BollingerBands(Strategy):
                 'window': self.parameters['window']
             }
         )
+        prnt_params(self.parameters)
 
 
     def on_trading_iteration(self):
