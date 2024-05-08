@@ -31,6 +31,29 @@ def prnt_params(params):
     for k,v in params.items():
         print(f'{k}:{v}')
 
+def calculate_profit(data, initial_capital):
+    capital = initial_capital
+    position = 0  # Represents the number of shares held
+    next_day_open = data['Open'].shift(-1)
+
+    # exclude the last day as there's no next day to trade
+    for i in range(len(data)-1):
+        if data['Signal'].iloc[i] == 'BUY' and capital >= next_day_open.iloc[i]:
+            # Buy one share
+            position += 1
+            capital -= next_day_open.iloc[i]
+        elif data['Signal'].iloc[i] == 'SELL' and position > 0:
+            # Sell one share
+            position -= 1
+            capital += next_day_open.iloc[i]
+
+    # print(f'position: {position}')
+    # print(f'last day price {next_day_open.iloc[-2]}')
+    # Calculate the value of the remaining shares at the last price
+    final_value = capital + position * next_day_open.iloc[-2] # use the second last 'Open' price
+    profit = final_value - initial_capital
+    return profit, capital
+
 # def moving_avg_plots(data, short_window, long_window, nbr):
 #     prices = data[0]
 #     short_ma = data[1]
